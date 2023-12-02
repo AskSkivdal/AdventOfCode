@@ -1,6 +1,6 @@
 
 
-fn max(x: u32, y:u32) -> u32 {
+fn max(x: u64, y:u64) -> u64 {
     if x > y {
         x
     } else {
@@ -8,16 +8,16 @@ fn max(x: u32, y:u32) -> u32 {
     }
 }
 
-const LIMIT_R: u32 = 12;
-const LIMIT_G: u32 = 13;
-const LIMIT_B: u32 = 14;
+const LIMIT_R: u64 = 12;
+const LIMIT_G: u64 = 13;
+const LIMIT_B: u64 = 14;
 
 #[derive(Debug)]
 pub struct Bag {
-    id: u32,
-    red: u32,
-    green: u32,
-    blue: u32,
+    id: u64,
+    red: u64,
+    green: u64,
+    blue: u64,
 }
 
 impl Bag {
@@ -36,7 +36,7 @@ impl Bag {
             None => return Err(())
         };
 
-        id = match game.parse::<u32>() {
+        id = match game.parse::<u64>() {
             Ok(v) => v,
             Err(_) => return Err(())
         };
@@ -51,7 +51,7 @@ impl Bag {
                     None => return Err(())
                 };
 
-                let value_u = match value.parse::<u32>() {
+                let value_u = match value.parse::<u64>() {
                     Ok(v) => v,
                     Err(_) => return Err(())
                 };
@@ -79,14 +79,17 @@ impl Bag {
 
         Ok(Bag { id, red, green, blue })
     }
+
     pub fn validate(self: &Self) -> bool {
         if (self.red > LIMIT_R) | (self.blue > LIMIT_B) | (self.green > LIMIT_G) {
             return false
         }
-
-
-
+        
         true
+    }
+
+    pub fn power(self: &Self) -> u64 {
+        self.red * self.green * self.blue
     }
 }
 
@@ -102,13 +105,10 @@ fn main() {
         }
 
     }
-    let mut id_sum: u32 = 0;
+    let mut sum: u64 = 0;
     for i in bags {
-        if i.validate() {
-            println!("{:?}", i);
-            id_sum += i.id;
-        }
+        sum += i.power()
     }
 
-    println!("{id_sum}")
+    println!("{sum}")
 }
