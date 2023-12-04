@@ -1,8 +1,11 @@
-#[derive(Debug)]
+use std::collections::HashMap;
+
+
 struct ScratchCard {
     card_id: i32,
     winning_numbers: Vec<i32>,
-    numbers: Vec<i32>
+    numbers: Vec<i32>,
+    matches: i32,
 }
 
 impl ScratchCard {
@@ -27,38 +30,54 @@ impl ScratchCard {
             numbers.push(num.parse::<i32>().unwrap())
         }
 
-        return Self { card_id, winning_numbers, numbers }
-    }
-    fn get_points(&self) -> i32 {
-        let mut points = 0;
-        for num in &self.numbers {
-            if self.winning_numbers.contains(num) {
-                if points == 0 {
-                    points = 1;
-                } else {
-                    points *= 2;
-                }
+        let mut matches = 0;
+        for num in &numbers {
+            if winning_numbers.contains(&num) {
+                matches += 1;
             }
         }
 
-
-        points
+        return Self { card_id, winning_numbers, numbers, matches }
     }
+
 }
 
 
 fn main() {
+    let mut card_map: HashMap<i32, ScratchCard> = HashMap::new();
     let lines: Vec<&str> = include_str!("../input.txt").split("\n").collect();
-    let mut cards: Vec<ScratchCard> = vec![];
 
-    let mut total_points = 0;
     for l in lines {
-        cards.push(ScratchCard::from_line(l));
+        let card = ScratchCard::from_line(l);
+        card_map.insert(card.card_id.clone(), card);
     }
+    let mut processed: i32 = 0;
+    let mut current_cards: Vec<i32> = (1..=214).collect();
 
-    for card in &cards {
-        total_points += card.get_points();
+    loop {
+        if current_cards.is_empty() {
+            break;
+        }
+
+        let mut new_cards: Vec<i32> = Vec::new();
+        for card_id in &current_cards {
+            processed += 1;
+            let current_card = match card_map.get(&card_id) {
+                Some(v) => v,
+                None => {
+                    println!("No card with id: {}", card_id);
+                    continue;
+                }
+            };
+            let _match = current_card.matches;
+            let mut current_new_cards: Vec<i32> = (card_id.clone()+1..=(card_id.clone()+_match.clone())).collect();
+            new_cards.append(&mut current_new_cards);
+        }
+        current_cards.clear();
+
+        current_cards.append(&mut new_cards);
     }
+    assert_eq!(processed, 13261850);
+    println!("{}", processed)
 
-    println!("{}", total_points)
 }
