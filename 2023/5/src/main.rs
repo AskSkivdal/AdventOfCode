@@ -2,18 +2,18 @@ use memoize::memoize;
 
 #[derive(Debug)]
 struct MapRecord {
-    source: i64,
-    destination: i64,
-    length: i64
+    source: u32,
+    destination: u32,
+    length: u32
 }
 
 impl MapRecord {
     fn from_string(text: &str) -> Result<Self, &'static str> {
         let num_strings: Vec<&str> = text.split(" ").collect();
-        let mut nums: Vec<i64> = Vec::new();
+        let mut nums: Vec<u32> = Vec::new();
 
         for ns in num_strings {
-            match ns.parse::<i64>() {
+            match ns.parse::<u32>() {
                 Ok(v) => nums.push(v),
                 Err(e) => continue
             }
@@ -28,14 +28,14 @@ impl MapRecord {
         Ok(Self { source: nums[1], destination: nums[0], length: nums[2] })
     }
 
-    fn is_in_record(&self, num: i64) -> bool {
+    fn is_in_record(&self, num: u32) -> bool {
         if (self.source <= num) && (num < self.source+self.length) {
             return true
         } 
         return false
     }
 
-    fn get_value(&self, num: i64) -> Option<i64> {
+    fn get_value(&self, num: u32) -> Option<u32> {
         if !self.is_in_record(num) {
             return None ;
         }
@@ -92,7 +92,7 @@ impl Map {
         Self { from: from.to_string(), to: to.to_string(), records }
     }
 
-    fn translate_value(&self, num: i64) -> i64 {
+    fn translate_value(&self, num: u32) -> u32 {
         for i in &self.records {
             if i.is_in_record(num) {
                 return i.get_value(num).unwrap()
@@ -105,47 +105,59 @@ impl Map {
 fn main() {
     let mut maps_str: Vec<&str> = include_str!("../input.txt").split("\n\n").collect();
     let seed_list_str: &str = maps_str[0].strip_prefix("seeds: ").unwrap();
-    let mut seeds_data: Vec<i64> = Vec::new();
+    let mut seeds_data: Vec<u32> = Vec::new();
     maps_str.remove(0);
 
     for seed in seed_list_str.split(" ") {
-        match seed.parse::<i64>() {
+        match seed.parse::<u32>() {
             Ok(v) => seeds_data.push(v),
             Err(_) => continue
         }
     }
 
-    let mut seeds: Vec<i64> = Vec::new();
+    let mut seed_ranges: Vec<(u32, u32)> = Vec::new();
     for idx in 0..(seeds_data.len()/2) {
         let (x,y) = (seeds_data[idx*2], seeds_data[idx*2+1]);
-        let mut new_seeds: Vec<i64> = (x..x+y).collect(); 
-        seeds.append(&mut new_seeds);
+        let new_seeds: (u32, u32)= (x, x+y);
+        seed_ranges.push(new_seeds);
     }
-    println!("Seeds gotten");
+
+    
+
+
+    println!("Seeds gotten: {:?}", seed_ranges);
 
     let mut maps: Vec<Map> = Vec::new();
     for i in maps_str {
         maps.push(Map::from_string(i));
     }
 
-    println!("Processing: {} seeds", seeds.len());
+    println!("Processing: {} seed ranges", seed_ranges.len());
+    let mut min: u32 = 1;
+    let mut min_set = false;
 
-    for map_idx in 0..maps.len() {
-        for i in 0..seeds.len() {
-            if (i as f32)%10_000_000.0 == 0.0 {
-                let completion: f32 = (i as f32)/(seeds.len() as f32);
-                print!("\r{:.2}% map {}/{}", (completion*100.0), map_idx, maps.len())
+    let seed_ranges_rng: Vec<std::ops::Range<u32>> = seed_ranges.iter().map(|(x,y)| (x.clone())..(y.clone())).collect();
+
+
+
+    for rng in seed_ranges_rng {
+        for start_seed in rng {
+            let mut num = start_seed.clone();
+            for map_idx in 0..maps.len() {
+                num = maps[map_idx].translate_value(num);
             }
-            let translated = maps[map_idx].translate_value(seeds[i]);
-            seeds[i] = translated;
-        }
-    }
-    println!();
-    println!("Getting min");
-    let mut min: i64 = seeds[0].clone();
-    for i in seeds {
-        if i < min {
-            min=i;
+
+            if !min_set {
+                min_set = true;
+                min = num
+            } else {
+                if min > num {
+                    min = num;
+                    if min == 0 {
+                        println!("{start_seed},")
+                    }
+                }
+            }
         }
     }
    
