@@ -1,5 +1,3 @@
-use memoize::memoize;
-
 #[derive(Debug)]
 struct MapRecord {
     source: u32,
