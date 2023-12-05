@@ -1,3 +1,4 @@
+use memoize::memoize;
 
 #[derive(Debug)]
 struct MapRecord {
@@ -97,7 +98,6 @@ impl Map {
                 return i.get_value(num).unwrap()
             }
         }
-
         num
     }
 }
@@ -105,29 +105,43 @@ impl Map {
 fn main() {
     let mut maps_str: Vec<&str> = include_str!("../input.txt").split("\n\n").collect();
     let seed_list_str: &str = maps_str[0].strip_prefix("seeds: ").unwrap();
-    let mut seeds: Vec<i64> = Vec::new();
+    let mut seeds_data: Vec<i64> = Vec::new();
     maps_str.remove(0);
 
     for seed in seed_list_str.split(" ") {
         match seed.parse::<i64>() {
-            Ok(v) => seeds.push(v),
+            Ok(v) => seeds_data.push(v),
             Err(_) => continue
         }
     }
+
+    let mut seeds: Vec<i64> = Vec::new();
+    for idx in 0..(seeds_data.len()/2) {
+        let (x,y) = (seeds_data[idx*2], seeds_data[idx*2+1]);
+        let mut new_seeds: Vec<i64> = (x..x+y).collect(); 
+        seeds.append(&mut new_seeds);
+    }
+    println!("Seeds gotten");
 
     let mut maps: Vec<Map> = Vec::new();
     for i in maps_str {
         maps.push(Map::from_string(i));
     }
 
-    let mut map_idx:usize = 0;
+    println!("Processing: {} seeds", seeds.len());
+
     for map_idx in 0..maps.len() {
         for i in 0..seeds.len() {
+            if (i as f32)%10_000_000.0 == 0.0 {
+                let completion: f32 = (i as f32)/(seeds.len() as f32);
+                print!("\r{:.2}% map {}/{}", (completion*100.0), map_idx, maps.len())
+            }
             let translated = maps[map_idx].translate_value(seeds[i]);
             seeds[i] = translated;
         }
     }
-
+    println!();
+    println!("Getting min");
     let mut min: i64 = seeds[0].clone();
     for i in seeds {
         if i < min {
@@ -135,6 +149,6 @@ fn main() {
         }
     }
    
-    println!("{}", min)
+    println!("Answer: {}", min)
     
 }
