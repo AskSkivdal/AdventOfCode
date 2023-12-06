@@ -3,40 +3,28 @@ use std::thread::available_parallelism;
 fn main() {
     let lines: Vec<&str> = include_str!("../input.txt").split("\n").filter(|x| !x.is_empty()).collect();
 
-    let times: Vec<i32> = lines[0].split_once(": ").unwrap().1.trim().split(" ").filter(|x| !x.is_empty()).map(|x| x.parse::<i32>().unwrap()).collect();
-    let distances: Vec<i32> = lines[1].split_once(": ").unwrap().1.trim().split(" ").filter(|x| !x.is_empty()).map(|x| x.parse::<i32>().unwrap()).collect();
-    println!("{:?}", times);
-    println!("{:?}", distances);
-    let groupings: Vec<(&i32, &i32)> = times.iter().zip(&distances).collect::<Vec<(&i32, &i32)>>();
+    let TIME: i64 = lines[0].split_once(": ").unwrap().1.trim().replace(" ", "").parse::<i64>().unwrap();
+    let DISTANCE: i64 = lines[1].split_once(": ").unwrap().1.trim().replace(" ", "").parse::<i64>().unwrap();
 
 
-    let mut all_games: Vec<(Vec<i32>, Vec<i32>)> = Vec::new();
 
-    for (time, distance) in groupings {
-        let mut wins: Vec<i32> = Vec::new();
-        let mut losses: Vec<i32> = Vec::new();
+    
+        let mut wins: Vec<i64> = Vec::new();
+        let mut losses: Vec<i64> = Vec::new();
         
-        for hold_time in 0..*time {
-            let time_left = time-hold_time;
+        for hold_time in 0..TIME {
+            let time_left = TIME-hold_time;
             let dist = time_left*hold_time;
-            println!("{}, {}", dist, distance);
-            if dist > *distance {
+            if dist > DISTANCE {
                 wins.push(hold_time);
-            } else if dist < *distance {
+            } else if dist < DISTANCE {
                 losses.push(hold_time)
             }
         }
-        all_games.push((wins, losses));
-    }
 
 
 
-    let mut ways_to_win = all_games.iter().map(|x| x.0.len()).collect::<Vec<usize>>();
-    let mut margin = ways_to_win.pop().unwrap();
-    for i in ways_to_win {
-        margin *= i
-    }
-
-    println!("{}",margin)
+    
+    println!("{}", wins.len());
 
 }
