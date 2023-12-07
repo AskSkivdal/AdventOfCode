@@ -1,5 +1,20 @@
 use std::{collections::HashMap, ops::AddAssign};
 
+const NOT_JOKER: [&'static str; 12] = [
+    "A",
+    "K",
+    "Q",
+    "T",
+    "9",
+    "8",
+    "7",
+    "6",
+    "5",
+    "4",
+    "3",
+    "2",
+];
+
 struct Card {
     value: u8,
 }
@@ -9,16 +24,16 @@ impl Card {
             'A' => 13,
             'K' => 12,
             'Q' => 11,
-            'J' => 10,
-            'T' => 9,
-            '9' => 8,
-            '8' => 7,
-            '7' => 6,
-            '6' => 5,
-            '5' => 4,
-            '4' => 3,
-            '3' => 2,
-            '2' => 1,
+            'T' => 10,
+            '9' => 9,
+            '8' => 8,
+            '7' => 7,
+            '6' => 6,
+            '5' => 5,
+            '4' => 4,
+            '3' => 3,
+            '2' => 2,
+            'J' => 1,
             _ => panic!()
         };
 
@@ -27,11 +42,23 @@ impl Card {
 }
 
 struct Hand {
+    original_input: String,
     hand: Vec<Card>,
 }
 
+impl PartialOrd for Hand {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.get_strength().partial_cmp(&other.get_strength())
+    }
+}
+impl PartialEq for Hand {
+    fn eq(&self, other: &Self) -> bool {
+        self.get_strength() == other.get_strength()
+    }
+}
 
-fn max(x: u128, y: u128) -> u128 {
+
+fn max<T:PartialOrd>(x: T, y: T) -> T {
     if x > y {
         x
     } else {
@@ -39,13 +66,47 @@ fn max(x: u128, y: u128) -> u128 {
     }
 }
 impl Hand {
-    fn from_string(text: &str) -> Self {
+    fn from_string(text: &str, original: &str) -> Self {
 
 
         let h: Vec<Card> = text.chars().map(|x| Card::from_char(x)).collect();
         
 
-        Self { hand: h }
+        Self { hand: h, original_input: original.to_string()}
+    }
+
+    fn from_string_jokerswap(text: &str, original: &str) -> Self {
+
+        let jokers = count_in_array(&text.chars().collect::<Vec<char>>(), 'J');
+
+        
+
+        let mut highest_hand = Self::from_string(text, original);
+
+        if jokers != 0 {
+            for i in NOT_JOKER {
+                let temp_text = text.replacen("J", i, 1);
+                highest_hand = max(highest_hand, Self::from_string_jokerswap(temp_text.as_str(), original));
+                
+            }
+        };
+
+
+
+        return highest_hand;
+
+    }
+
+    fn value_add(&self) -> (u128, usize) {
+        let mut cv = 0;
+        let mut size = 0;
+        for i in &self.hand {
+            cv = cv << 4;
+            size += 4;
+            cv += i.value as u128;
+        }
+
+        (cv,size)
     }
 
     fn get_strength(&self) -> u128 {
@@ -67,7 +128,7 @@ impl Hand {
         let singles = count_in_array(&vals, 1);
         let twos = count_in_array(&vals, 2);
         let threes = count_in_array(&vals, 3);
-        let fours: u8 = count_in_array(&vals, 4);
+        let fours  = count_in_array(&vals, 4);
         let fives = count_in_array(&vals, 5);
         let mut cv: u128 = 0;
         // Five of a kind
@@ -104,12 +165,11 @@ impl Hand {
             cv =  max(cv, 1);
         }
 
-
-
-        for i in &self.hand {
-            cv = cv << 4;
-            cv += i.value as u128;
-        }
+        let org = Self::from_string(self.original_input.as_str(), "");
+        let (va, shift) = org.value_add();
+        
+        cv = cv << shift;
+        cv = cv | va;
 
         cv
 
@@ -117,8 +177,8 @@ impl Hand {
     }
 }
 
-fn count_in_array(arr: &Vec<u8>, to_count: u8) -> u8 {
-    let mut contains: u8 = 0;
+fn count_in_array<T: PartialEq>(arr: &Vec<T>, to_count: T) -> u32 {
+    let mut contains: u32 = 0;
     for i in arr {
         if i == &to_count {
             contains += 1;
@@ -137,7 +197,7 @@ impl Pull {
     fn from_tuple(tup: (&str, &str)) -> Self {
         let (h, v) = tup;
 
-        Self { hand: Hand::from_string(h), bet: v.parse::<i32>().unwrap() }
+        Self { hand: Hand::from_string_jokerswap(h, h), bet: v.parse::<i32>().unwrap() }
     }   
 }
 
